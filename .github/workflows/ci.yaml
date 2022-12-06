@@ -1,15 +1,9 @@
-# ChatGPT on
-# "write a GitHub action that builds a `cmake`and `ninja`based project for windows and ubuntu on pull"
-# I asked later for
-# "Could you please add macos as well?"
-#
-# :D
 name: Build CMake and Ninja project
 
-on: [pull_request]
+on: [push]
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -25,7 +19,7 @@ jobs:
           cmake --build build
     env:
       # Set any necessary environment variables here
-  build:
+  ubuntu:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -41,7 +35,7 @@ jobs:
           cmake --build build
     env:
       # Set any necessary environment variables here
-    build:
+  macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -57,4 +51,3 @@ jobs:
           cmake --build build
     env:
       # Set any necessary environment variables here
-
