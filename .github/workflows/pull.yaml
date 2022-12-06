@@ -1,0 +1,60 @@
+# ChatGPT on
+# "write a GitHub action that builds a `cmake`and `ninja`based project for windows and ubuntu on pull"
+# I asked later for
+# "Could you please add macos as well?"
+#
+# :D
+name: Build CMake and Ninja project
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          # Install CMake and Ninja
+          choco install cmake ninja
+
+          # Install any other necessary dependencies here
+      - name: Build with CMake and Ninja
+        run: |
+          cmake -S . -B build
+          cmake --build build
+    env:
+      # Set any necessary environment variables here
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          # Install CMake and Ninja
+          sudo apt-get install cmake ninja-build
+
+          # Install any other necessary dependencies here
+      - name: Build with CMake and Ninja
+        run: |
+          cmake -S . -B build
+          cmake --build build
+    env:
+      # Set any necessary environment variables here
+    build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          # Install CMake and Ninja
+          brew install cmake ninja
+
+          # Install any other necessary dependencies here
+      - name: Build with CMake and Ninja
+        run: |
+          cmake -S . -B build
+          cmake --build build
+    env:
+      # Set any necessary environment variables here
+
