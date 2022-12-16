@@ -38,7 +38,7 @@ jobs:
           configurePreset: 'ninja-release'
 
           # This is the name of the CMakePresets.json's configuration to build the project.
-          buildPreset: 'ninja-release'
+          buildPreset: 'default'
 
     # TODO: package instead everything into an archive
     - name: Compute release version
@@ -53,4 +53,5 @@ jobs:
             RELEASE.txt
             README.md
             LICENSE
+            build/trampoline
 
