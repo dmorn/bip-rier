@@ -4,7 +4,7 @@
     {
       "name": "ninja-release",
       "binaryDir": "${sourceDir}/build/${presetName}",
-      "generator": "ninja",
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
