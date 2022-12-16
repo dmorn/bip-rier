@@ -10,6 +10,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    # Setup the build machine with the most recent versions of CMake and Ninja. Both are cached if not already: on subsequent runs both will be quickly restored from GitHub cache service.
+    - uses: lukka/get-cmake@latest
+
     - name: run-cmake
       uses: lukka/run-cmake@v10.1
       with:
@@ -24,4 +27,4 @@ jobs:
           configurePreset: 'ninja-release'
 
           # This is the name of the CMakePresets.json's configuration to build the project.
-          buildPreset: 'default'
+          buildPreset: 'ninja-release'

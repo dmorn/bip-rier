@@ -12,7 +12,7 @@
   ],
   "buildPresets": [
     {
-      "name": "default",
+      "name": "ninja-release",
       "configurePreset": "ninja-release"
     }
   ]
