@@ -7,7 +7,7 @@ jobs:
     name: '${{ matrix.os }}: build'
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: false # Why not true?
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
@@ -39,22 +39,26 @@ jobs:
           # This is the name of the CMakePresets.json's configuration to build the project.
           buildPreset: 'default'
 
-    - name: Compute release version
-      run: |
-        echo ${{ github.sha }} > RELEASE.txt
 
-    - name: Add trampoline suffix
-      run: |
-        mv build/trampoline trampoline-${{ matrix.os }}
+    # TODO: both macos and ubuntu executables are called "trampoline":  we have
+    # to distinguish them in the release.
 
-    - name: Package release
-      run: |
-        tar cz trampoline-* RELEASE.txt README.md LICENSE >release.${{ github.sha }}.tgz
 
-    - name: GH Release
-      uses: softprops/action-gh-release@v0.1.15
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-          files: |
-            release.${{ github.sha }}.tgz
+    # TODO: these steps need to run in a separate job that is executed on tags
+    # only and depends on build.
+
+    # - name: Compute release version
+    #   run: |
+    #     echo ${{ github.sha }} > RELEASE.txt
+
+    # - name: Package release
+    #   run: |
+    #     tar cz trampoline-* RELEASE.txt README.md LICENSE >release.${{ github.sha }}.tgz
+
+    # - name: GH Release
+    #   uses: softprops/action-gh-release@v0.1.15
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   with:
+    #       files: |
+    #         release.${{ github.sha }}.tgz
 
