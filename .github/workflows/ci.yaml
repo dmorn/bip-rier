@@ -45,7 +45,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: trampoline-${{ matrix.os }}
-        path: ${{ github.workspace}}/build/trampoline
+        path: ${{ github.workspace}}/build/trampoline*
 
   # release:
   #   needs: [build]
