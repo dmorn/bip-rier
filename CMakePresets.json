@@ -2,7 +2,7 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "ninja-release",
+      "name": "ninja",
       "binaryDir": "${sourceDir}/build/",
       "generator": "Ninja",
       "cacheVariables": {
@@ -12,8 +12,8 @@
   ],
   "buildPresets": [
     {
-      "name": "default",
-      "configurePreset": "ninja-release"
+      "name": "ninja",
+      "configurePreset": "ninja"
     }
   ]
 }

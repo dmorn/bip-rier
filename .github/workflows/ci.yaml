@@ -10,12 +10,14 @@ jobs:
       fail-fast: false # Why not true?
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    # Setup the build machine with the most recent versions of CMake and Ninja. Both are cached if not already: on subsequent runs both will be quickly restored from GitHub cache service.
+
+    # Setup the build machine with the most recent versions of CMake and Ninja.
+    # Both are cached if not already: on subsequent runs both will be quickly
+    # restored from GitHub cache service.
     - uses: lukka/get-cmake@latest
 
     # This step will only be required for ubuntu
@@ -34,10 +36,22 @@ jobs:
           # This is the name of the CMakePresets.json's configuration to use to generate
           # the project files. This configuration leverages the vcpkg.cmake toolchain file to
           # run vcpkg and install all dependencies specified in vcpkg.json.
-          configurePreset: 'ninja-release'
+          configurePreset: 'ninja'
 
           # This is the name of the CMakePresets.json's configuration to build the project.
-          buildPreset: 'default'
+          buildPreset: 'ninja'
+
+    - name: upload executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: trampoline-${{ matrix.os }}
+        path: ${{ github.workspace}}/build/trampoline
+
+  # release:
+  #   needs: [build]
+  #   steps:
+      
+  
 
 
     # TODO: both macos and ubuntu executables are called "trampoline":  we have
