@@ -1,78 +1,189 @@
-name: cmake build
+name: Release
+on:
+  push:
+    tags:
+    - '[0-9]+.[0-9]+'
+    - '[0-9]+.[0-9]+.[0-9]+'
+    branches:
+    - 'patch/ci-release-*'
 
-on: [push]
+env:
+  # Preview mode: Publishes the build output as a CI artifact instead of creating
+  # a release, allowing for manual inspection of the output. This mode is
+  # activated if the CI run was triggered by events other than pushed tags
+  preview: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  build:
-    name: '${{ matrix.os }}: build'
+  dist:
+    name: Dist
+    env:
+      # For some builds, we use cross to test on 32-bit and big-endian
+      # systems.
+      CARGO: cargo
+      # When CARGO is set to CROSS, this is set to `--target matrix.target`.
+      TARGET_FLAGS:
+      # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
+      TARGET_DIR: ./target
+      # Emit backtraces on panics.
+      RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Why not true?
+      fail-fast: false # don't fail other jobs if one fails
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        build: [aarch64-linux, x86_64-macos, x86_64-windows] #, x86_64-win-gnu, win32-msvc
+        include:
+        # - build: x86_64-linux
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: x86_64-unknown-linux-gnu
+        #   cross: false
+        - build: aarch64-linux
+          os: ubuntu-latest
+          rust: stable
+          target: aarch64-unknown-linux-gnu
+          cross: true
+        # - build: riscv64-linux
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: riscv64gc-unknown-linux-gnu
+        #   cross: true
+        - build: x86_64-macos
+          os: macos-latest
+          rust: stable
+          target: x86_64-apple-darwin
+          cross: false
+        - build: x86_64-windows
+          os: windows-latest
+          rust: stable
+          target: x86_64-pc-windows-msvc
+          cross: false
+        # - build: aarch64-macos
+        #   os: macos-latest
+        #   rust: stable
+        #   target: aarch64-apple-darwin
+        #   cross: false
+        #   skip_tests: true  # x86_64 host can't run aarch64 code
+        - build: x86_64-win-gnu
+          os: windows-2019
+          rust: stable-x86_64-gnu
+          target: x86_64-pc-windows-gnu
+        # - build: win32-msvc
+        #   os: windows-2019
+        #   rust: stable
+        #   target: i686-pc-windows-msvc
+
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
+      - name: Checkout sources
+        uses: actions/checkout@v3
 
-    # Setup the build machine with the most recent versions of CMake and Ninja.
-    # Both are cached if not already: on subsequent runs both will be quickly
-    # restored from GitHub cache service.
-    - uses: lukka/get-cmake@latest
+      - name: Install ${{ matrix.rust }} toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
 
-    # This step will only be required for ubuntu
-    - name: Install libudev on ubuntu
-      run: sudo apt-get install -y libudev-dev
-      if: matrix.os == 'ubuntu-latest'
+      # Install a pre-release version of Cross
+      # TODO: We need to pre-install Cross because we need cross-rs/cross#591 to
+      #       get a newer C++ compiler toolchain. Remove this step when Cross
+      #       0.3.0, which includes cross-rs/cross#591, is released.
+      - name: Install Cross
+        if: "matrix.cross"
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross.git --rev 47df5c76e7cba682823a0b6aa6d95c17b31ba63a
+          echo "CARGO=cross" >> $GITHUB_ENV
+        # echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        # echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
-    - name: run-cmake
-      uses: lukka/run-cmake@v10.1
-      with:
-          # This is the default path to the CMakeLists.txt along side the
-          # CMakePresets.json. Change if you need have CMakeLists.txt and CMakePresets.json
-          # located elsewhere.
-          # cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+      - name: Show command used for Cargo
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
 
-          # This is the name of the CMakePresets.json's configuration to use to generate
-          # the project files. This configuration leverages the vcpkg.cmake toolchain file to
-          # run vcpkg and install all dependencies specified in vcpkg.json.
-          configurePreset: 'ninja'
+      - name: Run cargo test
+        if: "!matrix.skip_tests"
+        run: ${{ env.CARGO }} test --release --locked --target ${{ matrix.target }} --workspace
 
-          # This is the name of the CMakePresets.json's configuration to build the project.
-          buildPreset: 'ninja'
+      - name: Set profile.release.strip = true
+        shell: bash
+        run: |
+          cat >> .cargo/config.toml <<EOF
+          [profile.release]
+          strip = true
+          EOF
 
-    - name: upload executable
-      uses: actions/upload-artifact@v3
-      with:
-        name: trampoline-${{ matrix.os }}
-        path: ${{ github.workspace}}/build/trampoline*
+      - name: Build release binary
+        run: ${{ env.CARGO }} build --release --locked --target ${{ matrix.target }}
 
-  # release:
-  #   needs: [build]
-  #   steps:
+      - name: Build archive
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ matrix.os }}" = "windows-2019" ]; then
+            cp "target/${{ matrix.target }}/release/hid-trampoline.exe" "dist/"
+          else
+            cp "target/${{ matrix.target }}/release/hid-trampoline" "dist/"
+          fi
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: bins-${{ matrix.build }}
+          path: dist
+
+  publish:
+    name: Publish
+    needs: [dist]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+
+      - name: Build archive
+        shell: bash
+        run: |
+          set -ex
+
+          source="$(pwd)"
+
+          cd "$(mktemp -d)"
+          mv $source/bins-* .
+          mkdir dist
+
+          for dir in bins-* ; do
+              platform=${dir#"bins-"}
+              if [[ $platform =~ "windows" ]]; then
+                  exe=".exe"
+              fi
+              pkgname=helix-$GITHUB_REF_NAME-$platform
+              mkdir $pkgname
+              cp $source/LICENSE $source/README.md $pkgname
+              mv bins-$platform/hid-trampoline$exe $pkgname
+              chmod +x $pkgname/hid-trampoline$exe
+
+              if [ "$exe" = "" ]; then
+                  tar cJf dist/$pkgname.tar.xz $pkgname
+              else
+                  7z a -r dist/$pkgname.zip $pkgname
+              fi
+          done
+
+          tar cJf dist/hid-trampiline-$GITHUB_REF_NAME-source.tar.xz -C $source .
+          mv dist $source/
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        if: env.preview == 'false'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          file_glob: true
+          tag: ${{ github.ref_name }}
+          overwrite: true
       
-  
-
-
-    # TODO: both macos and ubuntu executables are called "trampoline":  we have
-    # to distinguish them in the release.
-
-
-    # TODO: these steps need to run in a separate job that is executed on tags
-    # only and depends on build.
-
-    # - name: Compute release version
-    #   run: |
-    #     echo ${{ github.sha }} > RELEASE.txt
-
-    # - name: Package release
-    #   run: |
-    #     tar cz trampoline-* RELEASE.txt README.md LICENSE >release.${{ github.sha }}.tgz
-
-    # - name: GH Release
-    #   uses: softprops/action-gh-release@v0.1.15
-    #   if: startsWith(github.ref, 'refs/tags/')
-    #   with:
-    #       files: |
-    #         release.${{ github.sha }}.tgz
-
+      - name: Upload binaries as artifact
+        uses: actions/upload-artifact@v3
+        if: env.preview == 'true'
+        with:
+          name: release
+          path: dist/*
