@@ -155,7 +155,7 @@ jobs:
               if [[ $platform =~ "windows" ]]; then
                   exe=".exe"
               fi
-              pkgname=helix-$GITHUB_REF_NAME-$platform
+              pkgname=hid-trampoline-$GITHUB_REF_NAME-$platform
               mkdir $pkgname
               cp $source/LICENSE $source/README.md $pkgname
               mv bins-$platform/hid-trampoline$exe $pkgname
