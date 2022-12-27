@@ -19,3 +19,7 @@ Makefile
 # `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1`
 # (dictory will be filled with build-related files)
 compile_commands.json
+
+# Added by cargo
+
+/target
