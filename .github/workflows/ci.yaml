@@ -119,9 +119,9 @@ jobs:
         run: |
           mkdir -p dist
           if [ "${{ matrix.os }}" = "windows-2019" ]; then
-            cp "target/${{ matrix.target }}/release/hid-trampoline.exe" "dist/"
+            cp "target/${{ matrix.target }}/release/rol.exe" "dist/"
           else
-            cp "target/${{ matrix.target }}/release/hid-trampoline" "dist/"
+            cp "target/${{ matrix.target }}/release/rol" "dist/"
           fi
 
       - uses: actions/upload-artifact@v3
@@ -155,11 +155,11 @@ jobs:
               if [[ $platform =~ "windows" ]]; then
                   exe=".exe"
               fi
-              pkgname=hid-trampoline-$GITHUB_REF_NAME-$platform
+              pkgname=rol-$GITHUB_REF_NAME-$platform
               mkdir $pkgname
               cp $source/LICENSE $source/README.md $pkgname
-              mv bins-$platform/hid-trampoline$exe $pkgname
-              chmod +x $pkgname/hid-trampoline$exe
+              mv bins-$platform/rol$exe $pkgname
+              chmod +x $pkgname/rol$exe
 
               if [ "$exe" = "" ]; then
                   tar cJf dist/$pkgname.tar.xz $pkgname
@@ -168,7 +168,7 @@ jobs:
               fi
           done
 
-          tar cJf dist/hid-trampiline-$GITHUB_REF_NAME-source.tar.xz -C $source .
+          tar cJf dist/rol-$GITHUB_REF_NAME-source.tar.xz -C $source .
           mv dist $source/
 
       - name: Upload binaries to release
