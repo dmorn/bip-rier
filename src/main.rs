@@ -39,13 +39,13 @@ fn run(config: Config) {
     }
 }
 
-#[cfg(not(target = "windows"))]
+#[cfg(not(target_os = "windows"))]
 fn print_is_exclusive(device: HidDevice) {
     let is_open = device.is_open_exclusive().unwrap();
     println!("Is open exclusive? {:?}", is_open);
 }
 
-#[cfg(target = "windows")]
+#[cfg(target_os = "windows")]
 fn print_is_exclusive(_dev: HidDevice) {
     println!("Could not determine exlusive access on Windows");
 }
