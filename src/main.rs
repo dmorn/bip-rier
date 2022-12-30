@@ -3,7 +3,7 @@
 /// produced by a target hid event. The hid device is expected to produce a
 /// valid local path pointing to an existent file. rol instructs then edrawings
 /// to open that file.
-use hidapi::HidApi;
+use hidapi::{HidApi, HidDevice};
 use std::env;
 use std::error::Error;
 use std::ffi::CString;
@@ -39,11 +39,21 @@ fn run(config: Config) {
     }
 }
 
+#[cfg(not(target = "windows"))]
+fn print_is_exclusive(device: HidDevice) {
+    let is_open = device.is_open_exclusive().unwrap();
+    println!("Is open exclusive? {:?}", is_open);
+}
+
+#[cfg(target = "windows")]
+fn print_is_exclusive(_dev: HidDevice) {
+    println!("Could not determine exlusive access on Windows");
+}
+
 fn capture_hid_events(hid_api: HidApi, path: String) {
     let path = CString::new(path).unwrap();
     let device = hid_api.open_path(&path).unwrap();
-    let is_open = device.is_open_exclusive().unwrap();
-    println!("Is {:?} open exclusive? {:?}", path, is_open);
+    print_is_exclusive(device);
 }
 
 fn list_hid_devices(hid_api: HidApi) {
