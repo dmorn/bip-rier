@@ -3,10 +3,12 @@
 /// produced by a target hid event. The hid device is expected to produce a
 /// valid local path pointing to an existent file. rol instructs then edrawings
 /// to open that file.
-use hidapi::{HidApi, HidDevice};
+use hidapi::HidApi;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
 use std::ffi::CString;
+use std::process::Command;
 
 #[derive(Debug)]
 enum Mode {
@@ -39,31 +41,58 @@ fn run(config: Config) {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-fn print_is_exclusive(device: HidDevice) {
-    let is_open = device.is_open_exclusive().unwrap();
-    println!("Is open exclusive? {:?}", is_open);
-}
-
-#[cfg(target_os = "windows")]
-fn print_is_exclusive(_dev: HidDevice) {
-    println!("Could not determine exlusive access on Windows");
-}
-
 fn capture_hid_events(hid_api: HidApi, path: String) {
     let path = CString::new(path).unwrap();
     let device = hid_api.open_path(&path).unwrap();
-    print_is_exclusive(device);
+
+    let pretty_path = String::from_utf8_lossy(path.to_bytes()).to_string();
+    println!("Waiting for HID events on device {:}", &pretty_path);
+
+    loop {
+        // 512 is an arbitrary choice.
+        let mut buf = [0; 512];
+        match device.read(&mut buf[..]) {
+            Ok(res) => {
+                // Some scanners provide a "code" as first bit of the scan.
+                // Check wether this happens or not with our target barcodes.
+                let v = Vec::from(&buf[..res]);
+                match String::from_utf8(v) {
+                    Ok(path) => open(path.trim_matches(char::from(0))),
+                    Err(err) => println!("Error: {:}", err),
+                }
+            }
+            Err(err) => println!("Error: {:}", err),
+        }
+    }
+}
+
+fn open(path: &str) {
+    println!("* OPEN: {:?}", path);
+    match Command::new("open").arg(&path).spawn() {
+        Ok(mut child) => {
+            let ecode = child.wait().expect("failed to wait on child");
+            println!("** DONE {:}: {:?}", path, ecode);
+        }
+        Err(err) => println!("Error: {:}", err),
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct Device {
+    path: String,
+    manufacturer: String,
+    product: String,
 }
 
 fn list_hid_devices(hid_api: HidApi) {
     for device in hid_api.device_list() {
-        println!(
-            "- [path: {:?}, manufacturer: {:?}, product: {:?}]",
-            device.path(),
-            device.manufacturer_string().unwrap_or("N/A"),
-            device.product_string().unwrap_or("N/A")
-        );
+        let d = Device {
+            path: String::from_utf8_lossy(device.path().to_bytes()).to_string(),
+            manufacturer: String::from(device.manufacturer_string().unwrap_or("N/A")),
+            product: String::from(device.product_string().unwrap_or("N/A")),
+        };
+        let j = serde_json::to_string(&d).unwrap();
+        println!("{}", j);
     }
 }
 
