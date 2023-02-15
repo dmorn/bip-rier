@@ -1,4 +1,4 @@
-/// rol operates in two modes: discovery and capture. In the discovery mode,
+/// bip-rier operates in two modes: discovery and capture. In the discovery mode,
 /// it lists the available HID devices. In capture mode, collects the events
 /// produced by a target hid event. The hid device is expected to produce a
 /// valid local path pointing to an existent file. rol instructs then edrawings
