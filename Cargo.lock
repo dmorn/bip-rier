@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "bip-rier"
-version = "0.1.0"
+version = "0.4.1"
 dependencies = [
  "clap",
  "hidapi",
@@ -20,9 +20,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "cc"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a20104e2335ce8a659d6dd92a51a767a0c062599c73b343fd152cb401e828c3d"
+checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
 
 [[package]]
 name = "clap"
@@ -96,9 +96,9 @@ checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
 name = "hidapi"
-version = "2.0.2"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29839436a2de4587be0b5ef083492a5dcee40ac98404e63410dc98c916251ca7"
+checksum = "be8f12c6c547a4c0fdda0b833cbae77a1e6ed24163d5aab792ce860125badc53"
 dependencies = [
  "cc",
  "libc",
