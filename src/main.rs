@@ -1,9 +1,8 @@
+/// bip-rier operates in two modes: discovery and capture. In the discovery
+/// mode, it lists the available HID devices. In capture mode, reads from one
+/// of the devices. Upon each read, it executes a command passing the captured
+/// text as first argument. The command comes from the user.
 use clap::Parser;
-/// bip-rier operates in two modes: discovery and capture. In the discovery mode,
-/// it lists the available HID devices. In capture mode, collects the events
-/// produced by a target hid event. The hid device is expected to produce a
-/// valid local path pointing to an existent file. rol instructs then edrawings
-/// to open that file.
 use hidapi::HidApi;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
