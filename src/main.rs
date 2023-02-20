@@ -2,52 +2,30 @@
 /// mode, it lists the available HID devices. In capture mode, reads from one
 /// of the devices. Upon each read, it executes a command passing the captured
 /// text as first argument. The command comes from the user.
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use hidapi::HidApi;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::ffi::CString;
 use std::process::Command;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
 struct Cli {
-    path: Option<String>,
-
-    // Command to be called upon scan
-    #[arg(long)]
-    cmd: String,
+    #[command(subcommand)]
+    cmd: Option<Commands>,
 }
 
-#[derive(Debug)]
-enum Mode {
-    Discovery,
-    Capture(String),
-}
-
-struct Config {
-    mode: Mode,
-    hid_api: HidApi,
-    cmd: String,
-}
-
-impl Config {
-    fn new(path: Option<String>, cmd: String) -> Result<Config, Box<dyn Error>> {
-        let hid_api = HidApi::new()?;
-        let mode = match path {
-            Some(path) => Mode::Capture(path),
-            None => Mode::Discovery,
-        };
-
-        Ok(Config { mode, hid_api, cmd })
-    }
-}
-
-fn run(config: Config) {
-    match config.mode {
-        Mode::Discovery => list_hid_devices(config.hid_api),
-        Mode::Capture(path) => capture_hid_events(config.hid_api, &config.cmd, path),
-    }
+#[derive(Subcommand)]
+enum Commands {
+    /// Caputes HID device events
+    Capture {
+        /// Path to the HID device
+        path: String,
+        /// Command to be executed upon scan
+        #[arg(long)]
+        cmd: String,
+    },
 }
 
 fn capture_hid_events(hid_api: HidApi, cmd: &str, path: String) {
@@ -107,6 +85,10 @@ fn list_hid_devices(hid_api: HidApi) {
 
 fn main() {
     let cli = Cli::parse();
-    let config = Config::new(cli.path, cli.cmd).unwrap();
-    run(config);
+    let hid_api = HidApi::new().unwrap();
+
+    match cli.cmd {
+        None => list_hid_devices(hid_api),
+        Some(Commands::Capture { path, cmd }) => capture_hid_events(hid_api, &cmd, path),
+    }
 }
